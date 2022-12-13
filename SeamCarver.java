@@ -1,13 +1,16 @@
-import edu.princeton.cs.algs4.*;
+import edu.princeton.cs.algs4.Picture;
 
 import java.awt.*;
 
 public class SeamCarver {
     // create a seam carver object based on the given picture
     private Picture picture;
+    private int width, height;
 
     public SeamCarver(Picture picture) {
         this.picture = picture;
+        this.width = picture.width();
+        this.height = picture.height();
     }
 
     // current picture
@@ -17,12 +20,12 @@ public class SeamCarver {
 
     // width of current picture
     public int width() {
-        return picture.width();
+        return this.width;
     }
 
     // height of current picture
     public int height() {
-        return picture.height();
+        return this.height;
     }
 
     // energy of pixel at column x and row y
@@ -63,84 +66,19 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
+        return new int[2];
+    }
 
-        EdgeWeightedDigraph G = buildHorizontalGraph();
-
-        AcyclicSP sp = new AcyclicSP(G, 0);
-        int sourceMin = 0;
-        int vMin = findMinPath(sp, sourceMin);
-        int u;
-        double distMin = sp.distTo(vMin);
-        double dist;
-
-        for (int i = 1; i < height(); i++) {
-            sp = new AcyclicSP(G, from2Dto1D(i, 0));
-            u = findMinPath(sp, from2Dto1D(i, 0));
-            if (u == -1)
-                continue;
-            dist = sp.distTo(u);
-            if (dist < distMin) {
-                sourceMin = i;
-                vMin = u;
-                distMin = dist;
+    // sequence of indices for vertical seam
+    public int[] findVerticalSeam() {
+        double[] energy = new double[width() * height()];
+        for (int j = 0; j < height(); j++) {
+            for (int i = 0; i < width(); i++) {
+                energy[from2Dto1D(i, j)] = energy(i, j);
             }
         }
 
-        sp = new AcyclicSP(G, sourceMin);
-
-
-        int[] path = new int[width()];
-        int i = 0;
-        for (DirectedEdge edge : sp.pathTo(vMin)) {
-            if (i == 0)
-                path[i++] = edge.from();
-            path[i++] = edge.to();
-        }
-
-        return path;
-    }
-
-    private int findMinPath(AcyclicSP sp, int source) {
-        double min = sp.distTo(this.width() - 1);
-        double end = width() - 1;
-        double dist;
-        int v = width() - 1;
-        for (int i = 1; i < height(); i++) {
-            dist = sp.distTo(from2Dto1D(i, width() - 1));
-            if (dist < min)
-                v = from2Dto1D(width() - 1, i);
-        }
-        return v;
-    }
-
-    private EdgeWeightedDigraph buildHorizontalGraph() {
-        EdgeWeightedDigraph G = new EdgeWeightedDigraph(this.width() * this.height());
-
-        for (int j = 0; j < this.width() - 1; j++) {
-            for (int i = 0; i < this.height(); i++) {
-
-                if (from2Dto1D(i - 1, j + 1) != -1)
-                    G.addEdge(new DirectedEdge(
-                            from2Dto1D(i, j),
-                            from2Dto1D(i - 1, j + 1),
-                            Math.abs(energy(j, i) + energy(j + 1, i - 1))
-                    ));
-                if (from2Dto1D(i + 1, j + 1) != -1)
-                    G.addEdge(new DirectedEdge(
-                            from2Dto1D(i, j),
-                            from2Dto1D(i + 1, j + 1),
-                            Math.abs(energy(j, i) + energy(j + 1, i + 1))
-                    ));
-
-                G.addEdge(new DirectedEdge(
-                        from2Dto1D(i, j),
-                        from2Dto1D(i, j + 1),
-                        Math.abs(energy(j, i) + energy(j + 1, i))
-                ));
-            }
-        }
-
-        return G;
+        return new int[1];
     }
 
     private int from2Dto1D(int x, int y) {
@@ -149,9 +87,28 @@ public class SeamCarver {
         return x * this.width() + y;
     }
 
-    // sequence of indices for vertical seam
-    public int[] findVerticalSeam() {
-        return new int[2];
+    private int[][] adj(int i, int j) {
+        int[][] adj;
+
+        if (j > height() - 1)
+            return null;
+        if (i == 0 || i == width() - 1)
+            adj = new int[2][2];
+        else
+            adj = new int[3][2];
+
+
+        int n = i - 1;
+        for (int index = 0; index < adj.length; ) {
+            if (n != -1 && n != width()) {
+                adj[index][0] = n;
+                adj[index][1] = j + 1;
+                index++;
+            }
+            n++;
+        }
+
+        return adj;
     }
 
     // remove horizontal seam from current picture
@@ -169,12 +126,6 @@ public class SeamCarver {
     }
 
     public static void main(String[] args) {
-        Picture picture1 = new Picture("6x5.png");
-        SeamCarver sc = new SeamCarver(picture1);
 
-        int[] path = sc.findHorizontalSeam();
-        for (int i = 0; i < path.length; i++) {
-            StdOut.println(path[i]);
-        }
     }
 }
