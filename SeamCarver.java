@@ -123,19 +123,19 @@ public class SeamCarver {
                     G.addEdge(new DirectedEdge(
                             from2Dto1D(i, j),
                             from2Dto1D(i - 1, j + 1),
-                            Math.abs(energy(j, i) - energy(j + 1, i - 1))
+                            Math.abs(energy(j, i) + energy(j + 1, i - 1))
                     ));
                 if (from2Dto1D(i + 1, j + 1) != -1)
                     G.addEdge(new DirectedEdge(
                             from2Dto1D(i, j),
                             from2Dto1D(i + 1, j + 1),
-                            Math.abs(energy(j, i) - energy(j + 1, i + 1))
+                            Math.abs(energy(j, i) + energy(j + 1, i + 1))
                     ));
 
                 G.addEdge(new DirectedEdge(
                         from2Dto1D(i, j),
                         from2Dto1D(i, j + 1),
-                        Math.abs(energy(j, i) - energy(j + 1, i))
+                        Math.abs(energy(j, i) + energy(j + 1, i))
                 ));
             }
         }
