@@ -1,6 +1,10 @@
-import edu.princeton.cs.algs4.*;
+import edu.princeton.cs.algs4.Picture;
+import edu.princeton.cs.algs4.Stack;
+import edu.princeton.cs.algs4.StdOut;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class SeamCarver {
     // create a seam carver object based on the given picture
@@ -63,95 +67,34 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
-
-        EdgeWeightedDigraph G = buildHorizontalGraph();
-
-        AcyclicSP sp = new AcyclicSP(G, 0);
-        int sourceMin = 0;
-        int vMin = findMinPath(sp, sourceMin);
-        int u;
-        double distMin = sp.distTo(vMin);
-        double dist;
-
-        for (int i = 1; i < height(); i++) {
-            sp = new AcyclicSP(G, from2Dto1D(i, 0));
-            u = findMinPath(sp, from2Dto1D(i, 0));
-            if (u == -1)
-                continue;
-            dist = sp.distTo(u);
-            if (dist < distMin) {
-                sourceMin = i;
-                vMin = u;
-                distMin = dist;
-            }
-        }
-
-        sp = new AcyclicSP(G, sourceMin);
-
-
-        int[] path = new int[width()];
-        int i = 0;
-        for (DirectedEdge edge : sp.pathTo(vMin)) {
-            if (i == 0)
-                path[i++] = edge.from();
-            path[i++] = edge.to();
-        }
-
-        return path;
-    }
-
-    private int findMinPath(AcyclicSP sp, int source) {
-        double min = sp.distTo(this.width() - 1);
-        double end = width() - 1;
-        double dist;
-        int v = width() - 1;
-        for (int i = 1; i < height(); i++) {
-            dist = sp.distTo(from2Dto1D(i, width() - 1));
-            if (dist < min)
-                v = from2Dto1D(width() - 1, i);
-        }
-        return v;
-    }
-
-    private EdgeWeightedDigraph buildHorizontalGraph() {
-        EdgeWeightedDigraph G = new EdgeWeightedDigraph(this.width() * this.height());
-
-        for (int j = 0; j < this.width() - 1; j++) {
-            for (int i = 0; i < this.height(); i++) {
-
-                if (from2Dto1D(i - 1, j + 1) != -1)
-                    G.addEdge(new DirectedEdge(
-                            from2Dto1D(i, j),
-                            from2Dto1D(i - 1, j + 1),
-                            Math.abs(energy(j, i) + energy(j + 1, i - 1))
-                    ));
-                if (from2Dto1D(i + 1, j + 1) != -1)
-                    G.addEdge(new DirectedEdge(
-                            from2Dto1D(i, j),
-                            from2Dto1D(i + 1, j + 1),
-                            Math.abs(energy(j, i) + energy(j + 1, i + 1))
-                    ));
-
-                G.addEdge(new DirectedEdge(
-                        from2Dto1D(i, j),
-                        from2Dto1D(i, j + 1),
-                        Math.abs(energy(j, i) + energy(j + 1, i))
-                ));
-            }
-        }
-
-        return G;
-    }
-
-    private int from2Dto1D(int x, int y) {
-        if (x < 0 || x >= this.height() || y < 0 || y >= this.width())
-            return -1;
-        return x * this.width() + y;
+        this.picture = picture().
     }
 
     // sequence of indices for vertical seam
     public int[] findVerticalSeam() {
-        return new int[2];
+
+        double[][] energy = new double[width()][height()];
+
+        for (int i = 0; i < width(); i++) {
+            for (int j = 0; j < height(); j++) {
+                energy[i][j] = energy(i, j);
+            }
+        }
+
+        double[][] distTo = calculateDistances(energy);
+
+        int[] shortestPath = new int[height()];
+        int min;
+        for (int j = 1; j < shortestPath.length; j++) {
+            min = 0;
+            for (int i = 0; i < width(); i++) {
+                min = distTo[i][j] < distTo[min][j] ? i : min;
+            }
+            shortestPath[j] = min;
+        }
+
+        shortestPath[0] = shortestPath[1];
+        return shortestPath;
     }
 
     // remove horizontal seam from current picture
@@ -168,13 +111,74 @@ public class SeamCarver {
             throw new IllegalArgumentException();
     }
 
+    private int[][] adj(int x, int y) {
+        int[][] adjacentPixels;
+        int nexLevel = y + 1;
+        if (y == height() - 1)
+            return null;
+        if (x == 0 || x == width() - 1)
+            adjacentPixels = new int[2][2];
+        else
+            adjacentPixels = new int[3][2];
+
+        for (int index = 0, pixel = x - 1; index < adjacentPixels.length; ) {
+            if (pixel < 0) {
+                pixel++;
+                continue;
+            }
+
+            adjacentPixels[index][0] = pixel++;
+            adjacentPixels[index++][1] = nexLevel;
+        }
+
+        return adjacentPixels;
+    }
+
+    private double relax(double[][] energy, double pixel, double adj, int adjX, int adjY) {
+        if (adj == 0)
+            return pixel + energy[adjX][adjY];
+        return Math.min(adj, pixel + energy[adjX][adjY]);
+    }
+
+    private int from2Dto1D(int x, int y) {
+        if (x < 0 || x >= this.height() || y < 0 || y >= this.width())
+            return -1;
+        return x * this.width() + y;
+    }
+
+    private double[][] calculateDistances(double[][] energy) {
+        double[][] distTo = new double[width()][height()];
+
+        Stack<ArrayList<Integer>> stack = new Stack<>();
+        ArrayList<Integer> pixel;
+        int adjX, adjY, pixelX, pixelY;
+
+        for (int source = 0; source < width(); source++) {
+            stack.push(new ArrayList<>(Arrays.asList(source, 0)));
+            while (!stack.isEmpty()) {
+                pixel = stack.pop();
+                pixelX = pixel.get(0);
+                pixelY = pixel.get(1);
+                for (int[] adjPixel : adj(pixelX, pixelY)) {
+                    adjX = adjPixel[0];
+                    adjY = adjPixel[1];
+
+                    distTo[adjX][adjY] = relax(energy, distTo[pixelX][pixelY], distTo[adjX][adjY], adjX, adjY);
+
+                    if (adjPixel[1] < height() - 1)
+                        stack.push(new ArrayList<>(Arrays.asList(adjPixel[0], adjPixel[1])));
+                }
+            }
+        }
+
+        return distTo;
+    }
+
     public static void main(String[] args) {
         Picture picture1 = new Picture("6x5.png");
         SeamCarver sc = new SeamCarver(picture1);
 
-        int[] path = sc.findHorizontalSeam();
-        for (int i = 0; i < path.length; i++) {
-            StdOut.println(path[i]);
-        }
+        for (int path : sc.findVerticalSeam())
+            StdOut.println(path);
     }
 }
