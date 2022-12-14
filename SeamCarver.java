@@ -19,6 +19,10 @@ public class SeamCarver {
         return this.picture;
     }
 
+    private void setPicture(Picture picture) {
+        this.picture = picture;
+    }
+
     // width of current picture
     public int width() {
         return picture.width();
@@ -67,7 +71,22 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
-        this.picture = picture().
+        Picture transpose = new Picture(height(), width());
+        Picture temp = picture();
+        for (int i = 0; i < picture.width(); i++) {
+            for (int j = 0; j < picture.height(); j++)
+                transpose.set(j, i, this.picture().get(i, j));
+        }
+
+        this.setPicture(transpose);
+        int[] shortestPath = findVerticalSeam();
+        this.setPicture(temp);
+
+        for (int i = 0; i < width(); i++) {
+            StdOut.println(energy(i, shortestPath[i]));
+        }
+
+        return shortestPath;
     }
 
     // sequence of indices for vertical seam
@@ -101,14 +120,60 @@ public class SeamCarver {
     public void removeHorizontalSeam(int[] seam) {
         if (seam == null)
             throw new IllegalArgumentException();
+        if (seam.length != width())
+            throw new IllegalArgumentException("String Length = " + String.valueOf(seam.length));
+        if (width() <= 1)
+            throw new IllegalArgumentException();
+
+        Picture newPic = new Picture(width(), height() - 1);
+        for (int i = 0; i < width(); i++) {
+            if (seam[i] >= width() || seam[i] < 0)
+                throw new IllegalArgumentException();
+            if (i < width() - 1) {
+                if (Math.abs(seam[i] - seam[i + 1]) > 1)
+                    throw new IllegalArgumentException("Discrepancy = " +
+                            String.valueOf(seam[i]) + "-" + String.valueOf(seam[i + 1]));
+            }
+
+            for (int j = 0, k = 0; j < height(); j++) {
+                if (j == seam[i])
+                    continue;
+                newPic.set(i, k++, picture.get(i, j));
+            }
+        }
+
+        setPicture(newPic);
     }
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
         if (seam == null)
             throw new IllegalArgumentException();
-        if (this.width() <= 1 || this.height() <= 1)
+        if (seam.length != width()) {
+            throw new IllegalArgumentException("String Length = " + String.valueOf(seam.length));
+        }
+        if (height() <= 1)
             throw new IllegalArgumentException();
+
+        Picture newPic = new Picture(width() - 1, height());
+
+        for (int j = 0; j < height(); j++) {
+            if (seam[j] >= width() || seam[j] < 0)
+                throw new IllegalArgumentException();
+            if (j < width() - 1) {
+                if (Math.abs(seam[j] - seam[j + 1]) > 1)
+                    throw new IllegalArgumentException("Discrepancy = " +
+                            String.valueOf(seam[j]) + "-" + String.valueOf(seam[j + 1]));
+            }
+
+            for (int i = 0, l = 0; i < width(); i++) {
+                if (i == seam[j])
+                    continue;
+                newPic.set(l++, j, picture.get(i, j));
+            }
+        }
+
+        this.setPicture(newPic);
     }
 
     private int[][] adj(int x, int y) {
@@ -138,12 +203,6 @@ public class SeamCarver {
         if (adj == 0)
             return pixel + energy[adjX][adjY];
         return Math.min(adj, pixel + energy[adjX][adjY]);
-    }
-
-    private int from2Dto1D(int x, int y) {
-        if (x < 0 || x >= this.height() || y < 0 || y >= this.width())
-            return -1;
-        return x * this.width() + y;
     }
 
     private double[][] calculateDistances(double[][] energy) {
@@ -178,7 +237,7 @@ public class SeamCarver {
         Picture picture1 = new Picture("6x5.png");
         SeamCarver sc = new SeamCarver(picture1);
 
-        for (int path : sc.findVerticalSeam())
+        for (int path : sc.findHorizontalSeam())
             StdOut.println(path);
     }
 }
