@@ -1,14 +1,20 @@
 import edu.princeton.cs.algs4.Picture;
-import edu.princeton.cs.algs4.Stack;
 import edu.princeton.cs.algs4.StdOut;
 
 import java.awt.*;
-import java.util.ArrayList;
-import java.util.Arrays;
 
 public class SeamCarver {
     // create a seam carver object based on the given picture
     private Picture picture;
+
+    private class Point {
+        int x, y;
+
+        public Point(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
 
     public SeamCarver(Picture picture) {
         this.picture = picture;
@@ -178,27 +184,14 @@ public class SeamCarver {
         this.setPicture(newPic);
     }
 
-    private int[][] adj(int x, int y) {
-        int[][] adjacentPixels;
-        int nexLevel = y + 1;
-        if (y == height() - 1)
-            return new int[0][0];
-        if (x == 0 || x == width() - 1)
-            adjacentPixels = new int[2][2];
-        else
-            adjacentPixels = new int[3][2];
+    private Point[] adj(Point pixel) {
+        Point[] adj = {
+                new Point(pixel.x - 1, pixel.y + 1),
+                new Point(pixel.x, pixel.y + 1),
+                new Point(pixel.x + 1, pixel.x + 1)
+        };
 
-        for (int index = 0, pixel = x - 1; index < adjacentPixels.length; ) {
-            if (pixel < 0) {
-                pixel++;
-                continue;
-            }
-
-            adjacentPixels[index][0] = pixel++;
-            adjacentPixels[index++][1] = nexLevel;
-        }
-
-        return adjacentPixels;
+        return adj;
     }
 
     private double relax(double[][] energy, double pixel, double adj, int adjX, int adjY) {
@@ -207,7 +200,14 @@ public class SeamCarver {
         return Math.min(adj, pixel + energy[adjX][adjY]);
     }
 
-    private double[][] calculateDistances(int w, int h, double[][] energy) {
+    private double calculateDistances(int w, int h, double[][] energy) {
+        double[][] distTo = new double[w][h];
+        Point pixel;
+        Point adjacent;
+        
+    }
+
+/*private double[][] calculateDistances(int w, int h, double[][] energy) {
         double[][] distTo = new double[w][h];
 
         Stack<ArrayList<Integer>> stack = new Stack<>();
@@ -233,7 +233,7 @@ public class SeamCarver {
         }
 
         return distTo;
-    }
+    }*/
 
     public static void main(String[] args) {
 
