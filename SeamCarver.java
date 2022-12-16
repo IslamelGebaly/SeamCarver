@@ -3,9 +3,13 @@ import edu.princeton.cs.algs4.StdOut;
 
 import java.awt.*;
 
+
 public class SeamCarver {
     // create a seam carver object based on the given picture
     private Picture picture;
+    private double[][] distTo;
+    private double[][] energy;
+    private Point[][] edgeTo;
 
     private class Point {
         int x, y;
@@ -77,14 +81,17 @@ public class SeamCarver {
 
     // sequence of indices for horizontal seam
     public int[] findHorizontalSeam() {
-        Picture transpose = new Picture(height(), width());
+        final int WIDTH = width();
+        final int HEIGHT = height();
+
+        Picture flippedPicture = new Picture(HEIGHT, WIDTH);
         Picture temp = picture();
-        for (int i = 0; i < picture.width(); i++) {
-            for (int j = 0; j < picture.height(); j++)
-                transpose.set(j, i, this.picture().get(i, j));
+        for (int i = 0; i < WIDTH; i++) {
+            for (int j = 0; j < HEIGHT; j++)
+                flippedPicture.set(j, i, this.picture().get(i, j));
         }
 
-        this.setPicture(transpose);
+        this.setPicture(flippedPicture);
         int[] shortestPath = findVerticalSeam();
         this.setPicture(temp);
 
@@ -100,27 +107,42 @@ public class SeamCarver {
         final int WIDTH = width();
         final int HEIGHT = height();
 
-        double[][] energy = new double[WIDTH][HEIGHT];
+        this.energy = new double[WIDTH][HEIGHT];
+        this.edgeTo = new Point[WIDTH][HEIGHT];
+        this.distTo = new double[WIDTH][HEIGHT];
 
         for (int i = 0; i < WIDTH; i++) {
             for (int j = 0; j < HEIGHT; j++) {
-                energy[i][j] = energy(i, j);
+                this.energy[i][j] = energy(i, j);
+                if (j == 0)
+                    this.distTo[i][j] = 0;
+                else
+                    this.distTo[i][j] = Double.POSITIVE_INFINITY;
+                this.edgeTo[i][j] = new Point(-1, -1);
             }
         }
 
-        double[][] distTo = calculateDistances(WIDTH, HEIGHT, energy);
+        calculateDistances(WIDTH, HEIGHT);
 
         int[] shortestPath = new int[HEIGHT];
-        int min;
-        for (int j = 1; j < shortestPath.length; j++) {
-            min = 0;
-            for (int i = 0; i < WIDTH; i++) {
-                min = distTo[i][j] < distTo[min][j] ? i : min;
+        double minDist = Double.POSITIVE_INFINITY;
+        int minPos = 0;
+
+        for (int i = 0; i < WIDTH; i++) {
+            if (minDist > distTo[i][HEIGHT - 1]) {
+                minDist = distTo[i][HEIGHT - 1];
+                minPos = i;
             }
-            shortestPath[j] = min;
         }
 
-        shortestPath[0] = shortestPath[1];
+        Point vertix = new Point(minPos, HEIGHT - 1);
+
+        for (int j = HEIGHT - 1; j >= 0; j--) {
+            shortestPath[j] = vertix.x;
+            if (j > 0)
+                vertix = this.edgeTo[vertix.x][vertix.y];
+        }
+
         return shortestPath;
     }
 
@@ -188,54 +210,47 @@ public class SeamCarver {
         Point[] adj = {
                 new Point(pixel.x - 1, pixel.y + 1),
                 new Point(pixel.x, pixel.y + 1),
-                new Point(pixel.x + 1, pixel.x + 1)
+                new Point(pixel.x + 1, pixel.y + 1)
         };
 
         return adj;
     }
 
-    private double relax(double[][] energy, double pixel, double adj, int adjX, int adjY) {
-        if (adj == 0)
-            return pixel + energy[adjX][adjY];
-        return Math.min(adj, pixel + energy[adjX][adjY]);
+    private void relax(Point pixel, Point adj) {
+        if (this.distTo[adj.x][adj.y] > this.distTo[pixel.x][pixel.y] + this.energy[adj.x][adj.y]) {
+            this.edgeTo[adj.x][adj.y] = pixel;
+            this.distTo[adj.x][adj.y] = this.distTo[pixel.x][pixel.y] + this.energy[adj.x][adj.y];
+        }
     }
 
-    private double calculateDistances(int w, int h, double[][] energy) {
-        double[][] distTo = new double[w][h];
+    private void calculateDistances(int w, int h) {
         Point pixel;
-        Point adjacent;
-        
-    }
+        Point[] adjacent;
+        double minDistance = Double.POSITIVE_INFINITY;
 
-/*private double[][] calculateDistances(int w, int h, double[][] energy) {
-        double[][] distTo = new double[w][h];
-
-        Stack<ArrayList<Integer>> stack = new Stack<>();
-        ArrayList<Integer> pixel;
-        int adjX, adjY, pixelX, pixelY;
-
-        for (int source = 0; source < w; source++) {
-            stack.push(new ArrayList<>(Arrays.asList(source, 0)));
-            while (!stack.isEmpty()) {
-                pixel = stack.pop();
-                pixelX = pixel.get(0);
-                pixelY = pixel.get(1);
-                for (int[] adjPixel : adj(pixelX, pixelY)) {
-                    adjX = adjPixel[0];
-                    adjY = adjPixel[1];
-
-                    distTo[adjX][adjY] = relax(energy, distTo[pixelX][pixelY], distTo[adjX][adjY], adjX, adjY);
-
-                    if (adjPixel[1] < h - 1)
-                        stack.push(new ArrayList<>(Arrays.asList(adjPixel[0], adjPixel[1])));
+        for (int j = 0; j < h - 1; j++) {
+            for (int i = 0; i < w; i++) {
+                pixel = new Point(i, j);
+                adjacent = adj(pixel);
+                if (adjacent[0].x > 0) {
+                    relax(pixel, adjacent[0]);
+                    minDistance = Math.min(this.distTo[adjacent[0].x][adjacent[0].y], minDistance);
+                }
+                relax(pixel, adjacent[1]);
+                minDistance = Math.min(this.distTo[adjacent[1].x][adjacent[1].y], minDistance);
+                if (adjacent[2].x < w) {
+                    relax(pixel, adjacent[2]);
+                    minDistance = Math.min(this.distTo[adjacent[2].x][adjacent[2].y], minDistance);
                 }
             }
         }
-
-        return distTo;
-    }*/
+    }
 
     public static void main(String[] args) {
+        Picture p = new Picture("6x5.png");
+        SeamCarver seamCarver = new SeamCarver(p);
 
+        for (int i : seamCarver.findVerticalSeam())
+            StdOut.println(i);
     }
 }
