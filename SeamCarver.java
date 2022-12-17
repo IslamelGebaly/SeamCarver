@@ -1,6 +1,6 @@
 import edu.princeton.cs.algs4.Picture;
 
-import java.awt.*;
+import java.awt.Color;
 
 
 public class SeamCarver {
@@ -143,18 +143,21 @@ public class SeamCarver {
 
     // remove horizontal seam from current picture
     public void removeHorizontalSeam(int[] seam) {
+        final int WIDTH = width();
+        final int HEIGHT = height();
+
         if (seam == null)
             throw new IllegalArgumentException();
-        if (seam.length != width())
+        if (seam.length != WIDTH)
             throw new IllegalArgumentException("String Length = " + String.valueOf(seam.length));
-        if (width() <= 1)
+        if (HEIGHT <= 1)
             throw new IllegalArgumentException();
 
-        Picture newPic = new Picture(width(), height() - 1);
-        for (int i = 0; i < width(); i++) {
-            if (seam[i] >= width() || seam[i] < 0)
+        Picture newPic = new Picture(WIDTH, HEIGHT - 1);
+        for (int i = 0; i < WIDTH; i++) {
+            if (seam[i] >= WIDTH || seam[i] < 0)
                 throw new IllegalArgumentException();
-            if (i < width() - 1) {
+            if (i < WIDTH - 1) {
                 if (Math.abs(seam[i] - seam[i + 1]) > 1)
                     throw new IllegalArgumentException("Discrepancy = " +
                             String.valueOf(seam[i]) + "-" + String.valueOf(seam[i + 1]));
@@ -172,12 +175,14 @@ public class SeamCarver {
 
     // remove vertical seam from current picture
     public void removeVerticalSeam(int[] seam) {
+        final int WIDTH = width();
+        final int HEIGHT = height();
         if (seam == null)
             throw new IllegalArgumentException();
-        if (seam.length != width()) {
+        if (seam.length != HEIGHT) {
             throw new IllegalArgumentException("String Length = " + String.valueOf(seam.length));
         }
-        if (height() <= 1)
+        if (WIDTH <= 1)
             throw new IllegalArgumentException();
 
         Picture newPic = new Picture(width() - 1, height());
