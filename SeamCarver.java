@@ -39,12 +39,12 @@ public class SeamCarver {
 
     // height of current picture
     public int height() {
-        return picture.height();
+        return this.picture.height();
     }
 
     // energy of pixel at column x and row y
     public double energy(int x, int y) {
-        if (x < 0 || x > this.width() || y < 0 || y > this.height())
+        if (x < 0 || x >= this.width() || y < 0 || y >= this.height())
             throw new IllegalArgumentException();
 
         if (x == 0 || y == 0 || x == this.width() - 1 || y == this.height() - 1)
@@ -155,7 +155,7 @@ public class SeamCarver {
 
         Picture newPic = new Picture(WIDTH, HEIGHT - 1);
         for (int i = 0; i < WIDTH; i++) {
-            if (seam[i] >= WIDTH || seam[i] < 0)
+            if (seam[i] >= HEIGHT || seam[i] < 0)
                 throw new IllegalArgumentException();
             if (i < WIDTH - 1) {
                 if (Math.abs(seam[i] - seam[i + 1]) > 1)
@@ -163,7 +163,7 @@ public class SeamCarver {
                             String.valueOf(seam[i]) + "-" + String.valueOf(seam[i + 1]));
             }
 
-            for (int j = 0, k = 0; j < height(); j++) {
+            for (int j = 0, k = 0; j < HEIGHT; j++) {
                 if (j == seam[i])
                     continue;
                 newPic.set(i, k++, picture.get(i, j));
@@ -185,18 +185,18 @@ public class SeamCarver {
         if (WIDTH <= 1)
             throw new IllegalArgumentException();
 
-        Picture newPic = new Picture(width() - 1, height());
+        Picture newPic = new Picture(WIDTH - 1, HEIGHT);
 
-        for (int j = 0; j < height(); j++) {
-            if (seam[j] >= width() || seam[j] < 0)
+        for (int j = 0; j < HEIGHT; j++) {
+            if (seam[j] >= WIDTH || seam[j] < 0)
                 throw new IllegalArgumentException();
-            if (j < width() - 1) {
+            if (j < HEIGHT - 1) {
                 if (Math.abs(seam[j] - seam[j + 1]) > 1)
                     throw new IllegalArgumentException("Discrepancy = " +
                             String.valueOf(seam[j]) + "-" + String.valueOf(seam[j + 1]));
             }
 
-            for (int i = 0, l = 0; i < width(); i++) {
+            for (int i = 0, l = 0; i < WIDTH; i++) {
                 if (i == seam[j])
                     continue;
                 newPic.set(l++, j, picture.get(i, j));
