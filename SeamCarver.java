@@ -1,7 +1,7 @@
 import edu.princeton.cs.algs4.Picture;
 import edu.princeton.cs.algs4.StdOut;
 
-import java.awt.*;
+import java.awt.Color;
 
 
 public class SeamCarver {
@@ -95,7 +95,7 @@ public class SeamCarver {
         int[] shortestPath = findVerticalSeam();
         this.setPicture(temp);
 
-        for (int i = 0; i < width(); i++) {
+        for (int i = 0; i < WIDTH; i++) {
             StdOut.println(energy(i, shortestPath[i]));
         }
 
@@ -247,10 +247,6 @@ public class SeamCarver {
     }
 
     public static void main(String[] args) {
-        Picture p = new Picture("6x5.png");
-        SeamCarver seamCarver = new SeamCarver(p);
 
-        for (int i : seamCarver.findVerticalSeam())
-            StdOut.println(i);
     }
 }
